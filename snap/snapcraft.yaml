@@ -1,0 +1,55 @@
+name: zigbee2mqtt
+summary: Zigbee to MQTT bridge, get rid of your proprietary Zigbee bridges
+description: |
+  Allows you to use your Zigbee devices without the vendors bridge or gateway.
+  It bridges events and allows you to control your Zigbee devices via MQTT.
+  In this way you can integrate your Zigbee devices with whatever smart home
+  infrastructure you are using. 
+
+version: git
+base: core18
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: strict
+
+architectures:
+  - build-on: amd64
+  - build-on: armhf
+  - build-on: arm64
+
+apps:
+  zigbee2mqtt:
+    command: bin/node $SNAP/index.js
+    daemon: simple
+    restart-condition: on-failure
+    environment:
+      ZIGBEE2MQTT_CONFIG: $SNAP_DATA/configuration.yaml
+      ZIGBEE2MQTT_DATA: $SNAP_DATA
+    plugs:
+      - network
+      - serial-port
+
+parts:
+  zigbee2mqtt:
+    plugin: nodejs
+    nodejs-version: '12.16.3'
+    nodejs-package-manager: yarn
+    source: .
+    prime:
+      # remove snap irrelevant scripts
+      - -update.sh
+      - -scripts/zigbee2socat_installer.sh
+      - -scripts/install.sh
+      - -docker/
+      # remove data directory in snap directory
+      - -data/
+      # remove misc build and config files
+      - -*npm-shrinkwrap.json
+      - -azure-pipelines.yaml
+      - -yarn.lock
+
+  # custom default config is shipped for the snap version
+  default-config:
+    plugin: dump
+    source: snap/local/default
+    organize:
+      '*': default/
